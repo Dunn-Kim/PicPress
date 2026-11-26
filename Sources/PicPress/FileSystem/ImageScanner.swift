@@ -1,16 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
 
-/// Turns a typed or pasted path into a URL: trims whitespace and quotes, unescapes Terminal-style `\ `,
-/// expands `~`. Nil if nothing exists there.
-func parsePath(_ text: String) -> URL? {
-    let cleaned = text
-        .trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"'")))
-        .replacingOccurrences(of: "\\ ", with: " ")
-    let url = URL(filePath: (cleaned as NSString).expandingTildeInPath)
-    return FileManager.default.fileExists(atPath: url.path) ? url : nil
-}
-
 /// Expands folders recursively into image files, without duplicates. Skips hidden files and packages
 /// (e.g. a Photos library, whose internals must never be rewritten).
 func imageFiles(in urls: [URL]) -> [URL] {

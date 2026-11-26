@@ -24,7 +24,7 @@ struct ContentView: View {
             if case let .success(urls) = result { Task { await model.scan(urls) } }
         }
         .confirmationDialog("이미지 \(model.pending.count)개를 처리할까요?", isPresented: $model.confirming) {
-            Button("압축 후 원본 교체", role: .destructive) { Task { await model.process(format: format) } }
+            Button("압축 후 원본 교체", role: .destructive) { model.confirm(format: format) }
         } message: {
             Text("화질 검증을 통과하고 용량이 \(savingsText) 이상 줄어든 파일만 교체합니다. 원본은 휴지통으로 이동합니다.")
         }

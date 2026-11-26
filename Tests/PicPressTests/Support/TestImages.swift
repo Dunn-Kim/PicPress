@@ -41,17 +41,22 @@ func tempDir() throws -> URL {
     return dir
 }
 
+/// The bitmap as an image tagged with `space`. The context owns its memory, so the image never
+/// points at a buffer that has gone away.
+func cgImage(_ bitmap: Bitmap, space: CGColorSpace = CGColorSpace(name: CGColorSpace.sRGB)!,
+             hasAlpha: Bool = false) throws -> CGImage {
+    let ctx = try #require(CGContext(
+        data: nil, width: bitmap.width, height: bitmap.height, bitsPerComponent: 8,
+        bytesPerRow: bitmap.width * 4, space: space,
+        bitmapInfo: (hasAlpha ? CGImageAlphaInfo.premultipliedLast : .noneSkipLast).rawValue
+    ))
+    try #require(ctx.data).copyMemory(from: bitmap.px, byteCount: bitmap.px.count)
+    return try #require(ctx.makeImage())
+}
+
 func writeImage(to url: URL, type: UTType, _ bitmap: Bitmap, orientation: Int = 1,
-                        gps: Bool = false, hasAlpha: Bool = false) throws {
-    var px = bitmap.px
-    let image = try px.withUnsafeMutableBytes { buffer in
-        let ctx = try #require(CGContext(
-            data: buffer.baseAddress, width: bitmap.width, height: bitmap.height, bitsPerComponent: 8,
-            bytesPerRow: bitmap.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
-            bitmapInfo: (hasAlpha ? CGImageAlphaInfo.premultipliedLast : .noneSkipLast).rawValue
-        ))
-        return try #require(ctx.makeImage())
-    }
+                gps: Bool = false, hasAlpha: Bool = false) throws {
+    let image = try cgImage(bitmap, hasAlpha: hasAlpha)
     var props: [CFString: Any] = [kCGImagePropertyOrientation: orientation, kCGImageDestinationLossyCompressionQuality: 1.0]
     if gps {
         props[kCGImagePropertyGPSDictionary] = [kCGImagePropertyGPSLatitude: 37.5, kCGImagePropertyGPSLatitudeRef: "N"]

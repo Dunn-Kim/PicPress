@@ -144,10 +144,33 @@ import UniformTypeIdentifiers
     try writeImage(to: gif, type: .gif, Bitmap.photo(50, 50))
     try expectSkip(gif, "지원하지 않는 형식", mustNotDiscard)
 
-    // Non-image throws.
+    // 16-bit masters keep precision an 8-bit check can't see: never re-encoded.
+    let deep = dir.appending(path: "deep.png")
+    let deepCtx = try #require(CGContext(
+        data: nil, width: 64, height: 64, bitsPerComponent: 16, bytesPerRow: 64 * 8,
+        space: CGColorSpace(name: CGColorSpace.sRGB)!,
+        bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder16Little.rawValue
+    ))
+    let deepDest = try #require(CGImageDestinationCreateWithURL(deep as CFURL, UTType.png.identifier as CFString, 1, nil))
+    CGImageDestinationAddImage(deepDest, try #require(deepCtx.makeImage()), nil)
+    #expect(CGImageDestinationFinalize(deepDest))
+    try expectSkip(deep, "16비트 이미지", mustNotDiscard)
+
+    // A motion photo's video (bytes after the JPEG) would be dropped by a re-encode: left alone.
+    let motion = dir.appending(path: "motion.jpg")
+    try writeImage(to: motion, type: .jpeg, Bitmap.photo(300, 300))
+    try (Data(contentsOf: motion) + Data(repeating: 7, count: 4096)).write(to: motion)
+    try expectSkip(motion, "이미지 외 데이터 포함 (모션 포토·편집 이력 등)", mustNotDiscard)
+
+    // Non-image, or a truncated photo, throws without touching anything.
     let bad = dir.appending(path: "bad.jpg")
     try Data("not an image".utf8).write(to: bad)
     #expect(throws: CompressError.unreadable) { try optimize(bad, format: .heic, discard: mustNotDiscard) }
+    let cut = dir.appending(path: "cut.jpg")
+    try writeImage(to: cut, type: .jpeg, Bitmap.photo(400, 400))
+    let full = try Data(contentsOf: cut)
+    try full.prefix(full.count / 2).write(to: cut)
+    #expect(throws: CompressError.unreadable) { try optimize(cut, format: .heic, discard: mustNotDiscard) }
 }
 
 private func expectSkip(_ url: URL, _ reason: String, format: OutputFormat = .heic, _ discard: (URL) throws -> URL?,

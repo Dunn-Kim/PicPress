@@ -11,6 +11,3 @@ enum OutputFormat: String, CaseIterable {
         self == .heic ? [(.heic, "heic", 0.8), (.jpeg, "jpg", 0.9)] : [(.jpeg, "jpg", 0.9)]
     }
 }
-
-/// Input formats worth re-encoding. RAW, PSD, EXR, GIF, … are left alone: replacing them would lose data.
-let reencodableTypes: [UTType] = [.jpeg, .png, .heic, .heif, .tiff, .bmp, .webP] // public.heic ⊄ public.heif

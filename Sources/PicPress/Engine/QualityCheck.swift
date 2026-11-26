@@ -1,7 +1,8 @@
 import CoreGraphics
 import Foundation
 
-// Calibration knobs: PSNR (dB) of the re-encode vs. the original, 8-bit RGB.
+// Calibration knobs: PSNR (dB) of the re-encode vs. the original, 8-bit RGB, drawn in the original's
+// own space (sRGB for the calibration set; Display P3 would read ≈ 1 dB higher for the same encode).
 // Measured: good photo re-encodes land at 41–48 dB overall and ≥ 35 dB in the worst 32×32 tile;
 // chroma damage on coloured text drops the worst tile below 20 dB. Raise them to be stricter.
 let minPSNR = 40.0

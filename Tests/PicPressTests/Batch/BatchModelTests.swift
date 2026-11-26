@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import PicPress
 
-@MainActor @Test func runsWholeBatchAndReportsEveryFile() async throws {
+@MainActor @Test func runsExactlyTheConfirmedBatchAndReportsEveryFile() async throws {
     let dir = try tempDir()
     defer { try? FileManager.default.removeItem(at: dir) }
     let trash = dir.appending(path: ".trash") // hidden, so the scan ignores it
@@ -21,10 +21,15 @@ import Testing
 
     await model.scan(path: dir.path)
     #expect(model.confirming && model.pending.count == 2)
-    model.confirming = false // what the dialog does on confirm
 
-    await model.process(format: .heic)
-    #expect(!model.running && model.pending.isEmpty)
+    // Confirming locks the batch in synchronously: a drop landing right after is ignored.
+    let work = model.confirm(format: .heic)
+    #expect(model.running && !model.confirming && model.pending.isEmpty)
+    await model.scan([dir])
+    #expect(!model.confirming && model.pending.isEmpty)
+    await work.value
+
+    #expect(!model.running)
     #expect(model.jobs.count == 2 && model.jobs.allSatisfy(\.status.isFinished))
     #expect(model.jobs.filter { $0.status.saved > 0 }.count == 1) // photo replaced, noise kept
     #expect(model.visibleJobs.count == 2)
@@ -34,4 +39,16 @@ import Testing
 
     await model.scan(path: dir.appending(path: "missing").path)
     #expect(model.notice?.hasPrefix("경로를 찾을 수 없습니다") == true)
+}
+
+@Test func parsesTypedOrPastedPaths() throws {
+    let dir = try tempDir()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let spaced = dir.appending(path: "My Photos")
+    try FileManager.default.createDirectory(at: spaced, withIntermediateDirectories: true)
+
+    #expect(parsePath("  '\(spaced.path)'\n")?.lastPathComponent == "My Photos") // quoted, padded
+    #expect(parsePath(spaced.path.replacingOccurrences(of: " ", with: "\\ "))?.lastPathComponent == "My Photos") // Terminal-escaped
+    #expect(parsePath("~")?.path == NSHomeDirectory())
+    #expect(parsePath(dir.appending(path: "missing").path) == nil)
 }

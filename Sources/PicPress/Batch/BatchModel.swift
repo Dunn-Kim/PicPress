@@ -80,22 +80,38 @@ final class BatchModel {
         }
     }
 
-    func process(format: OutputFormat) async {
-        guard !running else { return }
+    /// Called from the confirmation dialog. Locks in exactly the confirmed files and marks the model busy
+    /// synchronously, so no scan can swap `pending` before work starts; then works through them.
+    @discardableResult
+    func confirm(format: OutputFormat) -> Task<Void, Never> {
+        guard !running else { return Task {} }
         jobs = pending.map { Job(src: $0) } // a new batch starts a fresh list, so indices below stay valid
         pending = []
+        confirming = false
         running = true
         let batch = jobs, discard = discard
-        await withTaskGroup(of: (Int, Job.Status).self) { group in
-            for (i, job) in batch.enumerated() {
-                if i >= workers, let result = await group.next() { jobs[result.0].status = result.1 }
-                jobs[i].status = .working
-                group.addTask { (i, await optimizeJob(job.src, format: format, discard: discard)) }
+        return Task {
+            await withTaskGroup(of: (Int, Job.Status).self) { group in
+                for (i, job) in batch.enumerated() {
+                    if i >= workers, let result = await group.next() { jobs[result.0].status = result.1 }
+                    jobs[i].status = .working
+                    group.addTask { (i, await optimizeJob(job.src, format: format, discard: discard)) }
+                }
+                for await (i, status) in group { jobs[i].status = status }
             }
-            for await (i, status) in group { jobs[i].status = status }
+            running = false
         }
-        running = false
     }
+}
+
+/// Turns a typed or pasted path into a URL: trims whitespace and quotes, unescapes Terminal-style `\ `,
+/// expands `~`. Nil if nothing exists there.
+func parsePath(_ text: String) -> URL? {
+    let cleaned = text
+        .trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"'")))
+        .replacingOccurrences(of: "\\ ", with: " ")
+    let url = URL(filePath: (cleaned as NSString).expandingTildeInPath)
+    return FileManager.default.fileExists(atPath: url.path) ? url : nil
 }
 
 @concurrent

@@ -14,15 +14,3 @@ import Testing
     #expect(imageFiles(in: [dir.appending(path: "a.jpg"), dir.appending(path: "Some.app")]).count == 1)
     #expect(imageFiles(in: [dir, dir.appending(path: "a.jpg"), dir]).count == 2) // no duplicates
 }
-
-@Test func parsesTypedOrPastedPaths() throws {
-    let dir = try tempDir()
-    defer { try? FileManager.default.removeItem(at: dir) }
-    let spaced = dir.appending(path: "My Photos")
-    try FileManager.default.createDirectory(at: spaced, withIntermediateDirectories: true)
-
-    #expect(parsePath("  '\(spaced.path)'\n")?.lastPathComponent == "My Photos") // quoted, padded
-    #expect(parsePath(spaced.path.replacingOccurrences(of: " ", with: "\\ "))?.lastPathComponent == "My Photos") // Terminal-escaped
-    #expect(parsePath("~")?.path == NSHomeDirectory())
-    #expect(parsePath(dir.appending(path: "missing").path) == nil)
-}
