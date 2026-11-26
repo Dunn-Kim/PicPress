@@ -12,8 +12,7 @@ enum Container {
 
 /// Walks the file's container structure — JPEG markers or HEIF (ISO BMFF) top-level boxes — without decoding.
 /// Other formats report `.clean`.
-func inspectContainer(_ url: URL, type: UTType) throws -> Container {
-    let data = try Data(contentsOf: url, options: .alwaysMapped)
+func inspectContainer(_ data: Data, type: UTType) -> Container {
     if type.conforms(to: .jpeg) { return data.withUnsafeBytes(jpegContainer) }
     if type.conforms(to: .heic) || type.conforms(to: .heif) { return isoContainer(data) }
     return .clean
@@ -51,6 +50,7 @@ private func isoContainer(_ data: Data) -> Container {
     let n = data.count
     let int = { (range: Range<Int>) in data[range].reduce(0) { $0 << 8 | Int($1) } }
     var i = 0
+    var sawImageData = false
     while i < n {
         guard i + 8 <= n else { return .truncated }
         var size = int(i..<(i + 4))
@@ -61,9 +61,12 @@ private func isoContainer(_ data: Data) -> Container {
         } else if size == 0 { // box runs to end of file
             size = n - i
         }
-        guard size >= 8, i + size <= n else { return .truncated }
+        guard size >= 8, size <= n - i else { return .truncated } // `n - i`: a huge 64-bit size can't overflow
+        if i == 0, type != "ftyp" { return .truncated }
         guard heifBoxes.contains(type) else { return .extraData }
+        sawImageData = sawImageData || type == "mdat"
         i += size
     }
-    return .clean
+    // A cut exactly on a box boundary leaves a well-formed prefix: require the image data box.
+    return sawImageData ? .clean : .truncated
 }
