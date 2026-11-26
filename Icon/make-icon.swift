@@ -150,6 +150,7 @@ for points in [16, 32, 128, 256, 512] {
     writePNG(render(points), to: iconset.appending(path: "icon_\(points)x\(points).png"))
     writePNG(render(points * 2), to: iconset.appending(path: "icon_\(points)x\(points)@2x.png"))
 }
+writePNG(render(256), to: URL(filePath: "Icon/AppIcon.png")) // for the README (GitHub can't show .icns)
 if CommandLine.arguments.count > 1 { writePNG(render(1024), to: URL(filePath: CommandLine.arguments[1])) }
 
 let iconutil = Process()
@@ -158,4 +159,4 @@ iconutil.arguments = ["-c", "icns", iconset.path, "-o", "Icon/AppIcon.icns"]
 try iconutil.run()
 iconutil.waitUntilExit()
 precondition(iconutil.terminationStatus == 0, "iconutil failed")
-print("wrote Icon/AppIcon.icns")
+print("wrote Icon/AppIcon.icns and Icon/AppIcon.png")
