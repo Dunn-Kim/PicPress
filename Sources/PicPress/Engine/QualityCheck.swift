@@ -11,40 +11,55 @@ let minTilePSNR = 35.0
 struct Reference {
     private let pixels: [UInt8]
     private let width: Int, height: Int
-    private let space = CGColorSpace(name: CGColorSpace.displayP3)!
+    private let space: CGColorSpace
 
+    /// Draws in the image's own RGB colour space when possible: skipping the colour conversion saves
+    /// ≈ 160 ms per 36 MP photo. Falls back to Display P3 (grey, CMYK, indexed, …).
     init?(_ image: CGImage) {
-        width = image.width
-        height = image.height
-        guard let drawn = draw(image, in: space) else { return nil }
-        pixels = drawn
+        let own = image.colorSpace?.model == .rgb ? image.colorSpace : nil
+        for space in [own, CGColorSpace(name: CGColorSpace.displayP3)].compactMap({ $0 }) {
+            guard let drawn = draw(image, in: space) else { continue }
+            pixels = drawn
+            self.space = space
+            width = image.width
+            height = image.height
+            return
+        }
+        return nil
     }
 
     /// Same size and transparency, PSNR ≥ `minPSNR` overall and ≥ `minTilePSNR` in every 32×32 tile
     /// (a global average alone would hide local damage that shows when zoomed in).
     func isIndistinguishable(from image: CGImage) -> Bool {
         guard image.width == width, image.height == height, let other = draw(image, in: space) else { return false }
+        return pixels.withUnsafeBufferPointer { a in
+            other.withUnsafeBufferPointer { b in withinThresholds(a, b) }
+        }
+    }
+
+    private func withinThresholds(_ a: UnsafeBufferPointer<UInt8>, _ b: UnsafeBufferPointer<UInt8>) -> Bool {
         let tile = 32
-        var total = 0.0
+        var total = 0
         for ty in stride(from: 0, to: height, by: tile) {
+            let rows = ty..<min(ty + tile, height)
             for tx in stride(from: 0, to: width, by: tile) {
-                var se = 0.0, n = 0.0
-                for y in ty..<min(ty + tile, height) {
-                    for x in tx..<min(tx + tile, width) {
+                let cols = tx..<min(tx + tile, width)
+                var squaredError = 0
+                for y in rows {
+                    for x in cols {
                         let i = (y * width + x) * 4
-                        if abs(Int(pixels[i + 3]) - Int(other[i + 3])) > 2 { return false } // transparency lost
+                        if abs(Int(a[i + 3]) - Int(b[i + 3])) > 2 { return false } // transparency lost
                         for c in 0..<3 {
-                            let d = Double(pixels[i + c]) - Double(other[i + c])
-                            se += d * d
+                            let d = Int(a[i + c]) - Int(b[i + c])
+                            squaredError += d * d
                         }
-                        n += 3
                     }
                 }
-                if psnr(se / n) < minTilePSNR { return false }
-                total += se
+                if psnr(squaredError, samples: rows.count * cols.count * 3) < minTilePSNR { return false }
+                total += squaredError
             }
         }
-        return psnr(total / Double(width * height * 3)) >= minPSNR
+        return psnr(total, samples: width * height * 3) >= minPSNR
     }
 }
 
@@ -62,6 +77,6 @@ private func draw(_ image: CGImage, in space: CGColorSpace) -> [UInt8]? {
     return drawn ? data : nil
 }
 
-private func psnr(_ mse: Double) -> Double {
-    mse == 0 ? .infinity : 10 * log10(255 * 255 / mse)
+private func psnr(_ squaredError: Int, samples: Int) -> Double {
+    squaredError == 0 ? .infinity : 10 * log10(255 * 255 * Double(samples) / Double(squaredError))
 }

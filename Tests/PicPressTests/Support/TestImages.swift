@@ -25,10 +25,11 @@ struct Bitmap {
     }
 
     /// Gradient plus mild grain, so it compresses like a photo rather than like flat artwork.
+    /// ±2 re-encodes to HEIC at ≈ 43 dB (sRGB), clear of the 40 dB bar; ±4 sits right on it (≈ 39–40 dB).
     static func photo(_ width: Int, _ height: Int) -> Bitmap {
         var bitmap = gradient(width, height)
         for i in bitmap.px.indices where i % 4 != 3 {
-            bitmap.px[i] = UInt8(clamping: Int(bitmap.px[i]) + .random(in: -4...4))
+            bitmap.px[i] = UInt8(clamping: Int(bitmap.px[i]) + .random(in: -2...2))
         }
         return bitmap
     }

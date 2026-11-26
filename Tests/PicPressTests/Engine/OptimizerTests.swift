@@ -52,6 +52,23 @@ import UniformTypeIdentifiers
     }
     #expect(heicOut == heic)
 
+    // Greyscale originals are compared in the Display P3 fallback space (an 8-bit RGBA context can't be grey).
+    let grey = dir.appending(path: "grey.png")
+    let rgb = Bitmap.photo(300, 300)
+    var greyPx = [UInt8](repeating: 0, count: 300 * 300)
+    for i in greyPx.indices { greyPx[i] = rgb.px[i * 4] }
+    let greyImage = try greyPx.withUnsafeMutableBytes { buffer in
+        try #require(CGContext(data: buffer.baseAddress, width: 300, height: 300, bitsPerComponent: 8, bytesPerRow: 300,
+                               space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)?.makeImage())
+    }
+    let greyDest = try #require(CGImageDestinationCreateWithURL(grey as CFURL, UTType.png.identifier as CFString, 1, nil))
+    CGImageDestinationAddImage(greyDest, greyImage, nil)
+    #expect(CGImageDestinationFinalize(greyDest))
+    let greyOutcome = try optimize(grey, format: .heic, discard: discard)
+    guard case .replaced = greyOutcome else {
+        Issue.record("expected greyscale PNG → HEIC, got \(greyOutcome)"); return
+    }
+
     // JPEG-only mode: photo-like PNG becomes .jpg.
     let png = dir.appending(path: "flat.png")
     try writeImage(to: png, type: .png, Bitmap.photo(300, 300))

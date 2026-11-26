@@ -1,10 +1,9 @@
 import UniformTypeIdentifiers
 
 /// Output policy chosen in the UI.
-enum OutputFormat: String, CaseIterable, Identifiable {
+enum OutputFormat: String, CaseIterable {
     case heic, jpeg
 
-    var id: Self { self }
     var label: String { self == .heic ? "HEIC 우선 (더 작음)" : "JPEG만 (호환성)" }
 
     /// Encodings tried in order; the first one that is small enough and passes the quality check wins.

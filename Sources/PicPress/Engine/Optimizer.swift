@@ -28,10 +28,10 @@ func optimize(_ src: URL, format: OutputFormat, discard: (URL) throws -> URL? = 
     else { throw CompressError.unreadable }
     guard reencodableTypes.contains(where: type.conforms(to:)) else { return .skipped("지원하지 않는 형식") }
     guard CGImageSourceGetCount(source) == 1 else { return .skipped("여러 장이 든 파일") }
-    guard let reference = CGImageSourceCreateImageAtIndex(source, 0, nil).flatMap(Reference.init)
-    else { throw CompressError.unreadable }
 
     let before = fileSize(src)
+    // Decoded only once a candidate is small enough: already-compressed files never pay for it.
+    lazy var reference = CGImageSourceCreateImageAtIndex(source, 0, nil).flatMap(Reference.init)
     // Same volume as `src`, so the final rename is atomic.
     let work = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: src, create: true)
     defer { try? FileManager.default.removeItem(at: work) }
@@ -40,8 +40,9 @@ func optimize(_ src: URL, format: OutputFormat, discard: (URL) throws -> URL? = 
         let tmp = work.appending(path: UUID().uuidString)
         guard encode(source, as: outType, quality: quality, to: tmp) else { continue }
         let after = fileSize(tmp)
-        guard Double(after) <= Double(before) * (1 - minSavings),
-              let out = CGImageSourceCreateWithURL(tmp as CFURL, nil).flatMap({ CGImageSourceCreateImageAtIndex($0, 0, nil) }),
+        guard Double(after) <= Double(before) * (1 - minSavings) else { continue }
+        guard let reference else { throw CompressError.unreadable }
+        guard let out = CGImageSourceCreateWithURL(tmp as CFURL, nil).flatMap({ CGImageSourceCreateImageAtIndex($0, 0, nil) }),
               reference.isIndistinguishable(from: out)
         else { continue }
 

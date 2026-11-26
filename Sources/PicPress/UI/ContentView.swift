@@ -44,7 +44,7 @@ struct ContentView: View {
                     .disabled(path.isEmpty)
             }
             Picker("형식", selection: $format) {
-                ForEach(OutputFormat.allCases) { Text($0.label).tag($0) }
+                ForEach(OutputFormat.allCases, id: \.self) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
             .fixedSize()
