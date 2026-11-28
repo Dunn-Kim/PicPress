@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "PicPress",
+    name: "MagicPics",
     platforms: [.macOS(.v15)],
     targets: [
-        .executableTarget(name: "PicPress"),
-        .testTarget(name: "PicPressTests", dependencies: ["PicPress"]),
+        .executableTarget(name: "MagicPics"),
+        .testTarget(name: "MagicPicsTests", dependencies: ["MagicPics"]),
     ]
 )

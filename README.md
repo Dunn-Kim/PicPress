@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="Icon/AppIcon.png" width="128" alt="PicPress 아이콘">
+  <img src="Icon/AppIcon.png" width="128" alt="Magic Pics 아이콘">
 </p>
 
-<h1 align="center">PicPress</h1>
+<h1 align="center">Magic Pics</h1>
 
 <p align="center">해상도와 화질은 그대로, 용량만 줄이는 macOS 사진 압축 앱</p>
 
@@ -21,7 +21,7 @@
 - **HEIC 우선, JPEG 대체** — HEIC가 기준에 못 미치는 사진은 JPEG(품질 90%)로 다시 시도합니다. 호환성이 중요하면 "JPEG만" 모드를 쓰세요.
 - **메타데이터 보존** — EXIF(촬영일·카메라 정보), GPS, 방향, 색 프로필을 유지하고, HDR 게인맵 보존 옵션을 켜고 인코딩합니다. 파일 생성일·수정일·권한도 그대로 옮깁니다.
 - **안전한 교체** — 새 파일은 원자적으로 배치되고, 실패하면 원래 상태로 되돌립니다. 원본은 휴지통에서 언제든 복구할 수 있습니다.
-- **재실행 안전** — 처리한 파일에는 확장 속성(`app.picpress.optimized`)이 붙어 다음 실행 때 건너뜁니다.
+- **재실행 안전** — 처리한 파일에는 확장 속성(`app.picpress.optimized`, 이전 이름 PicPress 시절부터 쓰던 이름 그대로)이 붙어 다음 실행 때 건너뜁니다.
 
 ## 화질 기준
 
@@ -63,10 +63,10 @@ PSNR 40 dB 이상이면 일반적으로 눈으로 구분하기 어렵다고 봅�
 ## 빌드와 설치
 
 ```sh
-git clone https://github.com/Dunn-Kim/PicPress.git
-cd PicPress
-./build.sh                                  # build/PicPress.app 생성 (ad-hoc 서명)
-ditto build/PicPress.app /Applications/PicPress.app
+git clone https://github.com/Dunn-Kim/MagicPics.git
+cd MagicPics
+./build.sh                                  # "build/Magic Pics.app" 생성 (ad-hoc 서명)
+ditto "build/Magic Pics.app" "/Applications/Magic Pics.app"
 ```
 
 테스트:
@@ -92,13 +92,13 @@ swift test
 ## 프로젝트 구조
 
 ```
-Sources/PicPress/
+Sources/MagicPics/
 ├── App/          진입점, 창
 ├── Engine/       압축 판단 — 출력 형식, 인코딩·검증, 화질 비교, 파일 구조 검사
 ├── FileSystem/   폴더 탐색, 원자적 교체·휴지통·처리 표시
 ├── Batch/        작업 상태, 동시 처리(최대 4개), 확인 흐름
 └── UI/           화면
-Tests/PicPressTests/   같은 구조의 테스트
+Tests/MagicPicsTests/  같은 구조의 테스트
 Icon/                  아이콘 생성기와 결과물
 build.sh, Info.plist   앱 번들 빌드
 ```

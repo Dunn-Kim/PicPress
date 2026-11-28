@@ -2,7 +2,7 @@ import Foundation
 import ImageIO
 import Testing
 import UniformTypeIdentifiers
-@testable import PicPress
+@testable import MagicPics
 
 @Test func replacesOnlyWhenSmallerAndIndistinguishable() throws {
     let dir = try tempDir()

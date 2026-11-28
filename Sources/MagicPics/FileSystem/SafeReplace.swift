@@ -8,7 +8,8 @@ enum ReplaceError: LocalizedError {
 
 private let processedMark = "app.picpress.optimized"
 
-/// True if PicPress already wrote this file (extended attribute), so reruns skip it.
+/// True if the app already wrote this file (extended attribute), so reruns skip it.
+/// The name predates the rename to Magic Pics; keep it, or files processed before would be re-encoded.
 func isMarkedProcessed(_ url: URL) -> Bool {
     getxattr(url.path, processedMark, nil, 0, 0, 0) >= 0
 }

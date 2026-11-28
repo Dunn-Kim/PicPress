@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import UniformTypeIdentifiers
-@testable import PicPress
+@testable import MagicPics
 
 @Test func findsDataARecodeWouldDropAndCutOffFiles() throws {
     let dir = try tempDir()

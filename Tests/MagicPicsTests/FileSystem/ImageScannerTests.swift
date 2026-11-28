@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PicPress
+@testable import MagicPics
 
 @Test func findsImagesRecursivelySkippingHiddenAndPackages() throws {
     let dir = try tempDir()

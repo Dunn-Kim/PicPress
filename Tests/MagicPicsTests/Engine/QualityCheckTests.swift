@@ -1,6 +1,6 @@
 import CoreGraphics
 import Testing
-@testable import PicPress
+@testable import MagicPics
 
 @Test func catchesLocalDamageThatTheGlobalAverageWouldHide() throws {
     let base = Bitmap.photo(512, 512)

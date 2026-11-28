@@ -1,4 +1,4 @@
-// Draws the PicPress app icon — a photo being squeezed by a square frame — and builds AppIcon.icns.
+// Draws the Magic Pics app icon — a photo being squeezed by a square frame — and builds AppIcon.icns.
 // Usage: swift Icon/make-icon.swift [preview.png]   (run from the repo root; needs macOS `iconutil`)
 import CoreGraphics
 import Foundation
@@ -143,7 +143,7 @@ func writePNG(_ image: CGImage, to url: URL) {
 }
 
 let fm = FileManager.default
-let iconset = fm.temporaryDirectory.appending(path: "PicPress-\(UUID().uuidString).iconset")
+let iconset = fm.temporaryDirectory.appending(path: "MagicPics-\(UUID().uuidString).iconset")
 try fm.createDirectory(at: iconset, withIntermediateDirectories: true)
 defer { try? fm.removeItem(at: iconset) }
 for points in [16, 32, 128, 256, 512] {

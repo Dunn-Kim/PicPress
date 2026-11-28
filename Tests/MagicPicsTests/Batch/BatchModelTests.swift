@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PicPress
+@testable import MagicPics
 
 @MainActor @Test func runsExactlyTheConfirmedBatchAndReportsEveryFile() async throws {
     let dir = try tempDir()
